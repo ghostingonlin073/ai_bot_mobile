@@ -3,127 +3,75 @@ name: Build Android APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
-  release:
-    types: [ published ]
+  workflow_dispatch:
 
 jobs:
-  build-debug:
+  build:
     runs-on: ubuntu-latest
-    name: Build Debug APK
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
       
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'zulu'
+        java-version: '11'
+        
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
+        
+    - name: Install Cordova
+      run: |
+        npm install -g cordova
+        
+    - name: Create package.json if missing
+      run: |
+        if [ ! -f package.json ]; then
+          cat > package.json << EOF
+{
+  "name": "ai-chat-mobile",
+  "version": "1.0.0",
+  "description": "AI Chat Mobile App",
+  "main": "index.js",
+  "scripts": {
+    "build": "cordova build android"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "cordova-android": "^10.1.2",
+    "cordova-plugin-whitelist": "^1.3.4"
+  },
+  "cordova": {
+    "platforms": [
+      "android"
+    ],
+    "plugins": {
+      "cordova-plugin-whitelist": {}
+    }
+  }
+}
+EOF
+        fi
         
     - name: Install dependencies
       run: |
-        npm ci
-        npm install -g @capacitor/cli
+        npm install
         
-    - name: Build web application
-      run: npm run build
-      
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Initialize Capacitor Android
+    - name: Add Android platform
       run: |
-        npx cap init "AI Chat Mobile" com.aichat.mobile --web-dir www
-        npx cap add android
+        cordova platform add android
         
-    - name: Build Android Debug APK
+    - name: Build APK
       run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleDebug
+        cordova build android
         
-    - name: Upload Debug APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: ai-chat-debug
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        name: ai-chat-apk
+        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
         retention-days: 30
-
-  build-release:
-    runs-on: ubuntu-latest
-    name: Build Release APK
-    if: github.event_name == 'release'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
-        cache: 'npm'
-        
-    - name: Install dependencies
-      run: |
-        npm ci
-        npm install -g @capacitor/cli
-        
-    - name: Build web application
-      run: npm run build
-      
-    - name: Setup Java
-      uses: actions/setup-java@v4
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        
-    - name: Setup Android SDK
-      uses: android-actions/setup-android@v3
-      
-    - name: Initialize Capacitor Android
-      run: |
-        npx cap init "AI Chat Mobile" com.aichat.mobile --web-dir www
-        npx cap add android
-        
-    - name: Generate Signing Key
-      run: |
-        keytool -genkey -v -keystore android.keystore -alias ai-chat -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=AI Chat, OU=Mobile, O=AI Chat, L=City, ST=State, C=US"
-        
-    - name: Build Android Release APK
-      run: |
-        cd android
-        chmod +x gradlew
-        ./gradlew assembleRelease -Pandroid.injected.signing.store.file=../android.keystore -Pandroid.injected.signing.store.password=password -Pandroid.injected.signing.key.alias=ai-chat -Pandroid.injected.signing.key.password=password
-        
-    - name: Upload Release APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: ai-chat-release
-        path: android/app/build/outputs/apk/release/app-release.apk
-        retention-days: 30
-        
-    - name: Create GitHub Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: android/app/build/outputs/apk/release/app-release.apk
-        body: |
-          # AI Chat Mobile App
-          
-          ## Что нового
-          - Автоматическая сборка APK
-          - Поддержка 8 AI моделей
-          - Темная тема
-          - Быстрый режим
-          
-          ## Установка
-          Скачайте APK файл и установите на ваше Android устройство.
