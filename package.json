@@ -1,0 +1,42 @@
+{
+  "name": "ai-chat-mobile",
+  "version": "1.0.0",
+  "description": "AI Chat Mobile Application with multiple AI models",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:android": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "build:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "dev": "npx http-server www -p 8080 -c-1",
+    "sync": "npx cap sync",
+    "open:android": "npx cap open android",
+    "deploy": "chmod +x scripts/deploy.sh && ./scripts/deploy.sh"
+  },
+  "keywords": [
+    "ai",
+    "chat",
+    "mobile",
+    "capacitor",
+    "android"
+  ],
+  "author": "AI Chat Team",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/android": "^5.0.0",
+    "@capacitor/app": "^5.0.0",
+    "@capacitor/cli": "^5.0.0",
+    "@capacitor/core": "^5.0.0",
+    "@capacitor/keyboard": "^5.0.0",
+    "@capacitor/splash-screen": "^5.0.0",
+    "@capacitor/status-bar": "^5.0.0"
+  },
+  "devDependencies": {
+    "fs-extra": "^11.1.0",
+    "http-server": "^14.1.1"
+  },
+  "capacitor": {
+    "appId": "com.aichat.mobile",
+    "appName": "AI Chat Mobile",
+    "webDir": "www"
+  }
+}
