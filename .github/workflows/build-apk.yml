@@ -28,10 +28,19 @@ jobs:
       run: |
         npm install -g cordova
         
-    - name: Create package.json if missing
+    - name: Check for package.json
+      id: check_package
       run: |
-        if [ ! -f package.json ]; then
-          cat > package.json << EOF
+        if [ -f package.json ]; then
+          echo "package_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "package_exists=false" >> $GITHUB_OUTPUT
+        fi
+        
+    - name: Create basic package.json if missing
+      if: steps.check_package.outputs.package_exists == 'false'
+      run: |
+        cat > package.json << 'ENDOFFILE'
 {
   "name": "ai-chat-mobile",
   "version": "1.0.0",
@@ -54,8 +63,7 @@ jobs:
     }
   }
 }
-EOF
-        fi
+ENDOFFILE
         
     - name: Install dependencies
       run: |
