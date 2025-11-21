@@ -13,11 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Java 17
+    - name: Setup Java 11
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '17'
+        java-version: '11'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -26,14 +26,14 @@ jobs:
         
     - name: Install dependencies
       run: |
-        npm install -g cordova
+        npm install -g cordova@11.0.0
         sudo apt-get update
         sudo apt-get install -y git wget
         
-    - name: Create Cordova project structure
+    - name: Create Cordova project with compatible versions
       run: |
         # Создаем новый Cordova проект
-        cordova create ai-chat-app com.aichat.mobile "AI Chat Mobile"
+        npx cordova@11.0.0 create ai-chat-app com.aichat.mobile "AI Chat Mobile"
         cd ai-chat-app
         
         # Копируем наш index.html в www папку
@@ -41,49 +41,31 @@ jobs:
           cp ../index.html www/
           echo "✓ index.html скопирован"
         else
-          echo "⚠ index.html не найден, будет использован стандартный"
+          echo "⚠ index.html не найден"
+          exit 1
         fi
         
-        # Копируем config.xml если существует
-        if [ -f ../config.xml ]; then
-          cp ../config.xml ./
-          echo "✓ config.xml скопирован"
-        fi
-        
-    - name: Set Java version for Cordova
+    - name: Add compatible Android platform
       run: |
         cd ai-chat-app
-        # Устанавливаем переменные окружения для Java 17
-        echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
-        echo "PATH=$JAVA_HOME_17_X64/bin:$PATH" >> $GITHUB_ENV
-        
-    - name: Install npm dependencies
-      run: |
-        cd ai-chat-app
-        npm install
-        
-    - name: Add Android platform
-      run: |
-        cd ai-chat-app
-        cordova platform add android@11.0.0 --verbose
+        npx cordova@11.0.0 platform add android@10.1.1 --verbose
         
     - name: Build Android APK
       run: |
         cd ai-chat-app
-        cordova build android --verbose
+        npx cordova@11.0.0 build android --verbose
         
     - name: Check build results
       run: |
         cd ai-chat-app
         echo "=== Результаты сборки ==="
-        find platforms/android -name "*.apk" -type f
         if [ -f "platforms/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
           echo "✅ APK успешно собран!"
           ls -la platforms/android/app/build/outputs/apk/debug/
           echo "📦 Размер APK: $(du -h platforms/android/app/build/outputs/apk/debug/app-debug.apk | cut -f1)"
         else
           echo "❌ APK не найден!"
-          find platforms/android -type f -name "*.apk" || echo "No APK files found"
+          find platforms/android -name "*.apk" -type f || echo "APK files not found"
           exit 1
         fi
         
