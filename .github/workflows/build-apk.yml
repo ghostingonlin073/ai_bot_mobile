@@ -13,11 +13,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
       
-    - name: Setup Java
+    - name: Setup Java 17
       uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '17'
         
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -50,11 +50,12 @@ jobs:
           echo "✓ config.xml скопирован"
         fi
         
-        # Копируем package.json если существует
-        if [ -f ../package.json ]; then
-          cp ../package.json ./
-          echo "✓ package.json скопирован"
-        fi
+    - name: Set Java version for Cordova
+      run: |
+        cd ai-chat-app
+        # Устанавливаем переменные окружения для Java 17
+        echo "JAVA_HOME=$JAVA_HOME_17_X64" >> $GITHUB_ENV
+        echo "PATH=$JAVA_HOME_17_X64/bin:$PATH" >> $GITHUB_ENV
         
     - name: Install npm dependencies
       run: |
@@ -64,7 +65,7 @@ jobs:
     - name: Add Android platform
       run: |
         cd ai-chat-app
-        cordova platform add android --verbose
+        cordova platform add android@11.0.0 --verbose
         
     - name: Build Android APK
       run: |
@@ -79,8 +80,10 @@ jobs:
         if [ -f "platforms/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
           echo "✅ APK успешно собран!"
           ls -la platforms/android/app/build/outputs/apk/debug/
+          echo "📦 Размер APK: $(du -h platforms/android/app/build/outputs/apk/debug/app-debug.apk | cut -f1)"
         else
           echo "❌ APK не найден!"
+          find platforms/android -type f -name "*.apk" || echo "No APK files found"
           exit 1
         fi
         
