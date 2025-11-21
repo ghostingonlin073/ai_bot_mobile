@@ -30,14 +30,18 @@ pkg update -y && pkg upgrade -y
 log_info "2. Установка необходимых пакетов..."
 pkg install -y nodejs git openjdk-17
 
-log_info "3. Установка Cordova..."
+log_info "3. Проверка версии Java..."
+java -version
+javac -version
+
+log_info "4. Установка Cordova..."
 npm install -g cordova
 
-log_info "4. Создание Cordova проекта..."
+log_info "5. Создание Cordova проекта..."
 cordova create ai-chat-app com.aichat.mobile "AI Chat Mobile"
 cd ai-chat-app
 
-log_info "5. Копирование вашего index.html..."
+log_info "6. Копирование вашего index.html..."
 if [ -f ../index.html ]; then
     cp ../index.html www/
     log_success "index.html скопирован в www/"
@@ -46,15 +50,19 @@ else
     exit 1
 fi
 
-log_info "6. Добавление Android платформы..."
-cordova platform add android
+log_info "7. Добавление Android платформы..."
+cordova platform add android@11.0.0
 
-log_info "7. Сборка APK..."
+log_info "8. Сборка APK..."
 cordova build android
 
 if [ -f "platforms/android/app/build/outputs/apk/debug/app-debug.apk" ]; then
     log_success "Сборка завершена успешно!"
     log_success "📱 APK: platforms/android/app/build/outputs/apk/debug/app-debug.apk"
+    
+    # Показываем размер файла
+    APK_SIZE=$(du -h platforms/android/app/build/outputs/apk/debug/app-debug.apk | cut -f1)
+    log_success "💾 Размер APK: $APK_SIZE"
     
     # Копируем APK для удобства
     cp platforms/android/app/build/outputs/apk/debug/app-debug.apk ../ai-chat-app.apk
