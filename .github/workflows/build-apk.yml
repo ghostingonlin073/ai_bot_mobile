@@ -28,20 +28,10 @@ jobs:
       run: |
         npm install -g cordova
         
-    - name: Check for package.json
-      id: check_package
+    - name: Create package.json if missing
       run: |
-        if [ -f package.json ]; then
-          echo "package_exists=true" >> $GITHUB_OUTPUT
-        else
-          echo "package_exists=false" >> $GITHUB_OUTPUT
-        fi
-        
-    - name: Create basic package.json if missing
-      if: steps.check_package.outputs.package_exists == 'false'
-      run: |
-        cat > package.json << 'ENDOFFILE'
-{
+        if [ ! -f package.json ]; then
+          echo '{
   "name": "ai-chat-mobile",
   "version": "1.0.0",
   "description": "AI Chat Mobile App",
@@ -62,8 +52,8 @@ jobs:
       "cordova-plugin-whitelist": {}
     }
   }
-}
-ENDOFFILE
+}' > package.json
+        fi
         
     - name: Install dependencies
       run: |
@@ -81,5 +71,5 @@ ENDOFFILE
       uses: actions/upload-artifact@v4
       with:
         name: ai-chat-apk
-        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
-        retention-days: 30
+        path:
+        
